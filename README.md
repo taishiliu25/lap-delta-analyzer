@@ -17,6 +17,23 @@ both sources, and the iRacing page differs only in how you load the file.
 
 ---
 
+## Demo
+
+Two laps compared in the distance domain: Verstappen vs. Pérez, **Monza 2023 Qualifying**
+(+0.381 s over the lap).
+
+![Dashboard overview: KPIs and synced speed / throttle / brake / delta traces](docs/dashboard-overview.png)
+
+Mini-sector **dominance** on the real circuit (who is faster where), with the delta table
+that reconciles to the overall gap:
+
+![Mini-sector dominance map on the Monza circuit](docs/mini-sector-dominance.png)
+
+> **Live demo:** deploy to Streamlit Community Cloud in ~2 minutes (see
+> [Deploy a live demo](#deploy-a-live-demo-streamlit-community-cloud)), then drop the URL here.
+
+---
+
 ## What it does
 
 - **Ingest** real F1 car + position telemetry by year / event / session / driver.
@@ -81,6 +98,17 @@ pytest -m iracing
 race session). The continuous stream is split into laps at start/finish crossings and you
 compare any two — same traces, sectors, dominance map and coaching as the FastF1 page.
 `pyirsdk` is a core dependency, so it works out of the box.
+
+### Deploy a live demo (Streamlit Community Cloud)
+
+1. Push this repo to GitHub.
+2. Go to [share.streamlit.io](https://share.streamlit.io), sign in with GitHub, click **New app**.
+3. Select this repo, branch `main`, main file `app.py`, and **Deploy**.
+
+`requirements.txt` already lists every dependency, so the build runs as-is. The **FastF1 page**
+works on the hosted server (it has internet and caches after the first load); the **iRacing page**
+takes an uploaded `.ibt`. Paste the resulting `https://<app>.streamlit.app` URL into the Demo
+section above.
 
 ---
 
