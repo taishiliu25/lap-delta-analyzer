@@ -52,15 +52,18 @@ _THEME_CSS = """
 <style>
 :root { --pw-red:#E10600; --pw-bg:#0E1117; --pw-panel:#161A21; --pw-elev:#1A2029;
   --pw-line:#242C39; --pw-muted:#8A93A3; --pw-text:#D7DCE3; }
-/* Hide the Deploy toolbar / menu / footer, but KEEP the header so the sidebar
-   collapse + expand control stays usable; just make the header blend in. */
-[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"],
-#MainMenu, footer { display:none !important; }
+/* Hide the Deploy button + main menu (both inside stToolbarActions), but KEEP the
+   toolbar — the collapsed-sidebar reopen button is a sibling inside it. */
+[data-testid="stToolbarActions"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], #MainMenu, footer { display:none !important; }
 header[data-testid="stHeader"] { background:transparent; }
-/* Keep the collapsed-sidebar reopen button always visible and legible */
-[data-testid="stExpandSidebarButton"] { visibility:visible !important; opacity:1 !important; }
-[data-testid="stExpandSidebarButton"] button { color:var(--pw-text) !important;
-  background:var(--pw-elev) !important; border:1px solid var(--pw-line) !important; }
+/* Make the collapsed-sidebar reopen button clearly visible on the dark theme */
+[data-testid="stExpandSidebarButton"] { opacity:1 !important; visibility:visible !important;
+  background:var(--pw-elev) !important; border:1px solid var(--pw-line) !important;
+  border-radius:8px !important; }
+[data-testid="stExpandSidebarButton"] span,
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"] {
+  color:var(--pw-text) !important; opacity:1 !important; }
 .block-container { padding-top: 2.2rem; padding-bottom: 3.5rem; max-width: 1500px; }
 
 /* Top bar */
