@@ -30,7 +30,7 @@ from lap_delta import catalog, minisectors, sectors, units  # noqa: E402
 from lap_delta.align import compute_delta, total_delta  # noqa: E402
 from lap_delta.coaching import coaching_table  # noqa: E402
 from lap_delta.corners import detect_corners  # noqa: E402
-from lap_delta.schema import Lap, format_laptime  # noqa: E402
+from lap_delta.schema import Lap, LapMeta, format_laptime  # noqa: E402
 from lap_delta.viz import (  # noqa: E402
     delta_gain_loss_figure,
     gear_rpm_figure,
@@ -43,6 +43,7 @@ from lap_delta.viz import (  # noqa: E402
 st.set_page_config(page_title="Lap Delta Analyzer", page_icon="🏁", layout="wide")
 
 FIRST_TELEMETRY_YEAR = 2018
+DEMO_DIR = pathlib.Path(__file__).parent / "data" / "demo"
 
 
 # --- theme -------------------------------------------------------------------------
@@ -51,10 +52,16 @@ _THEME_CSS = """
 <style>
 :root { --pw-red:#E10600; --pw-bg:#0E1117; --pw-panel:#161A21; --pw-elev:#1A2029;
   --pw-line:#242C39; --pw-muted:#8A93A3; --pw-text:#D7DCE3; }
-/* Hide Streamlit chrome so this reads as a bespoke app, not a Streamlit demo */
-header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"], #MainMenu, footer { display:none !important; }
-.block-container { padding-top: 1.6rem; padding-bottom: 3.5rem; max-width: 1500px; }
+/* Hide the Deploy toolbar / menu / footer, but KEEP the header so the sidebar
+   collapse + expand control stays usable; just make the header blend in. */
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"],
+#MainMenu, footer { display:none !important; }
+header[data-testid="stHeader"] { background:transparent; }
+/* Keep the collapsed-sidebar reopen button always visible and legible */
+[data-testid="stExpandSidebarButton"] { visibility:visible !important; opacity:1 !important; }
+[data-testid="stExpandSidebarButton"] button { color:var(--pw-text) !important;
+  background:var(--pw-elev) !important; border:1px solid var(--pw-line) !important; }
+.block-container { padding-top: 2.2rem; padding-bottom: 3.5rem; max-width: 1500px; }
 
 /* Top bar */
 .pw-top { display:flex; align-items:center; justify-content:space-between;
@@ -531,12 +538,56 @@ def iracing_page():
     )
 
 
+# --- Demo page (bundled, offline) --------------------------------------------------
+
+@st.cache_data(show_spinner=False)
+def load_demo():
+    """Load the bundled Monza 2023 Q comparison (VER vs PER) from small CSVs.
+
+    Pre-computed canonical laps, so this renders instantly with **no FastF1 download** —
+    the reliable first impression on shared hosting where a live fetch may be slow.
+    """
+    import json
+
+    import pandas as pd
+
+    meta = json.loads((DEMO_DIR / "meta.json").read_text())
+    out = {}
+    for key in ("ver", "per"):
+        df = pd.read_csv(DEMO_DIR / f"{key}_monza_2023q.csv")
+        out[key] = Lap(df, LapMeta(**meta[key]))
+    return out["ver"], out["per"]
+
+
+def demo_page():
+    inject_theme()
+    _top_bar("DEMO · MONZA 2023 Q")
+    st.caption("A pre-loaded example so you can see the analysis instantly, with no data "
+               "download. Use **FastF1 Analysis** to pick your own laps, or **iRacing (.ibt)** "
+               "to upload sim telemetry.")
+    try:
+        reference, comparison = load_demo()
+    except Exception as exc:  # noqa: BLE001 - bundled data should always load
+        st.error(f"Demo data unavailable: {exc}")
+        return
+    corner_markers = [(str(c.number), c.apex_dist) for c in detect_corners(reference)]
+    render_comparison(
+        reference, comparison,
+        ref_code="VER", cmp_code="PER",
+        ref_color=reference.meta.team_color, cmp_color=comparison.meta.team_color,
+        corner_markers=corner_markers, imperial=False,
+        title="Monza 2023 · Qualifying",
+        subtitle="Verstappen vs Pérez (teammates) · PER vs VER (reference)",
+    )
+
+
 # --- entry -------------------------------------------------------------------------
 
 def main():
     st.navigation(
         [
-            st.Page(fastf1_page, title="FastF1 Analysis", icon="🏁", default=True),
+            st.Page(demo_page, title="Demo", icon="🏁", default=True),
+            st.Page(fastf1_page, title="FastF1 Analysis", icon="📊"),
             st.Page(iracing_page, title="iRacing (.ibt)", icon="🏎️"),
         ],
         position="top",
