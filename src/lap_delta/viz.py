@@ -54,7 +54,7 @@ def _colors(ref_color: str | None, cmp_color: str | None) -> tuple[str, str]:
     rc = ref_color or REF_COLOR
     cc = cmp_color or CMP_COLOR
     if rc.lower() == cc.lower():
-        cc = _lighten(cc, 0.5)
+        cc = _lighten(cc, 0.62)  # clearly lighter shade of the same team color
     return rc, cc
 
 
@@ -63,7 +63,7 @@ def _apply_theme(fig: go.Figure) -> go.Figure:
     fig.update_layout(
         paper_bgcolor=_PAPER_BG, plot_bgcolor=_PAPER_BG,
         font=dict(family=_FONT, color=_TEXT, size=12),
-        title_font=dict(family=_FONT, color=_TEXT, size=15),
+        title=dict(x=0.0, xanchor="left", font=dict(family=_FONT, color=_TEXT, size=15)),
         legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=_MUTED, size=11)),
         hoverlabel=dict(bgcolor=_HOVER_BG, bordercolor=_AXIS,
                         font=dict(color=_TEXT, family=_FONT, size=12)),
@@ -95,13 +95,13 @@ def traces_figure(
         rows=4, cols=1, shared_xaxes=True, vertical_spacing=0.04,
         row_heights=[0.34, 0.19, 0.19, 0.28],
         subplot_titles=(f"Speed ({su})", "Throttle (%)", "Brake (%)",
-                        f"Delta (s) — {cmp_label.split()[0]} minus {ref_label.split()[0]}"),
+                        f"Delta (s): {cmp_label.split()[0]} minus {ref_label.split()[0]}"),
     )
 
     fig.add_trace(go.Scatter(x=d, y=units.speed(delta_df["speed_kph_ref"], imperial),
-                             name=ref_label, line=dict(color=rc)), row=1, col=1)
+                             name=ref_label, line=dict(color=rc, width=2.3)), row=1, col=1)
     fig.add_trace(go.Scatter(x=d, y=units.speed(delta_df["speed_kph_cmp"], imperial),
-                             name=cmp_label, line=dict(color=cc)), row=1, col=1)
+                             name=cmp_label, line=dict(color=cc, width=2.3)), row=1, col=1)
     fig.add_trace(go.Scatter(x=d, y=delta_df["throttle_ref"] * 100, name=ref_label,
                              line=dict(color=rc), showlegend=False), row=2, col=1)
     fig.add_trace(go.Scatter(x=d, y=delta_df["throttle_cmp"] * 100, name=cmp_label,
@@ -156,7 +156,7 @@ def delta_gain_loss_figure(
                              name=f"{cmp_code} gaining", connectgaps=False))
     fig.add_hline(y=0, line_dash="dot", line_color=_AXIS)
     fig.update_layout(
-        title=f"Time delta — {cmp_code} minus {ref_code} "
+        title=f"Time delta: {cmp_code} minus {ref_code} "
               f"(below 0 → {cmp_code} ahead; green → {cmp_code} gaining)",
         height=340, hovermode="x unified", margin=dict(t=50, b=40, l=60, r=20),
         xaxis_title=f"Distance ({du})", yaxis_title="Delta (s)",
@@ -324,7 +324,7 @@ def _dominance_map(
     """
     fig = go.Figure()
     if not _has_position(delta_df):
-        fig.update_layout(title=f"{title} — unavailable (no position data)")
+        fig.update_layout(title=f"{title}: unavailable (no position data)")
         return _apply_theme(fig)
 
     dist = delta_df["distance_m"].to_numpy(dtype=float)

@@ -6,8 +6,8 @@ Two pages that share **one** analysis dashboard — only the data *input* differ
 
 - **FastF1 Analysis** — cascading dropdowns (Year → Event → Session → driver+lap per side)
   select two real F1 laps.
-- **iRacing (.ibt)** — upload an ``.ibt`` file (or pick a bundled sample); the stream is split
-  into laps and two are selected.
+- **iRacing (.ibt)** upload your own ``.ibt`` export; the stream is split into laps and two
+  are selected.
 
 Both feed the identical, source-agnostic :func:`render_comparison` — synced traces, gain/loss
 delta, sector + mini-sector analysis, dominance + delta track maps, gear/RPM and corner
@@ -49,9 +49,12 @@ FIRST_TELEMETRY_YEAR = 2018
 
 _THEME_CSS = """
 <style>
-:root { --pw-red:#E10600; --pw-panel:#161A21; --pw-line:#232A36; --pw-muted:#8A93A3; }
-.block-container { padding-top: 1.4rem; padding-bottom: 3rem; max-width: 1500px; }
-#MainMenu, footer { visibility: hidden; }
+:root { --pw-red:#E10600; --pw-bg:#0E1117; --pw-panel:#161A21; --pw-elev:#1A2029;
+  --pw-line:#242C39; --pw-muted:#8A93A3; --pw-text:#D7DCE3; }
+/* Hide Streamlit chrome so this reads as a bespoke app, not a Streamlit demo */
+header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], #MainMenu, footer { display:none !important; }
+.block-container { padding-top: 1.6rem; padding-bottom: 3.5rem; max-width: 1500px; }
 
 /* Top bar */
 .pw-top { display:flex; align-items:center; justify-content:space-between;
@@ -69,13 +72,15 @@ _THEME_CSS = """
 .pw-h .t { font-size:1.15rem; font-weight:700; letter-spacing:.01em; }
 .pw-h .s { color:var(--pw-muted); font-size:.9rem; }
 
-/* KPI metric cards */
-[data-testid="stMetric"] { background:var(--pw-panel); border:1px solid var(--pw-line);
-  border-radius:10px; padding:.7rem .9rem; }
-[data-testid="stMetricLabel"] p { text-transform:uppercase; letter-spacing:.1em;
+/* KPI metric cards — elevated surface with a hairline top highlight */
+[data-testid="stMetric"] { background:var(--pw-elev); border:1px solid var(--pw-line);
+  border-radius:12px; padding:.8rem 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
+[data-testid="stMetricLabel"] p { text-transform:uppercase; letter-spacing:.11em;
   font-size:.68rem; color:var(--pw-muted); }
-[data-testid="stMetricValue"] { font-variant-numeric:tabular-nums;
-  font-family:'JetBrains Mono','SF Mono',Consolas,monospace; font-size:1.5rem; }
+[data-testid="stMetricValue"] { font-variant-numeric:tabular-nums; color:var(--pw-text);
+  font-family:'JetBrains Mono','SF Mono',Consolas,monospace; font-size:1.55rem;
+  letter-spacing:-0.01em; }
 [data-testid="stMetricDelta"] { font-variant-numeric:tabular-nums; }
 
 /* Monospace, tabular numbers in data tables */
@@ -190,7 +195,7 @@ def _sel_faster_to_code(df, ref_code: str, cmp_code: str):
 def _driver_lap_picker(side: str, drivers: list[dict], laps_df, key: str):
     """Driver dropdown + that driver's lap dropdown; returns (code, lap_number, color)."""
     codes = [d["code"] for d in drivers]
-    labels = {d["code"]: f'{d["code"]} — {d["name"]}' for d in drivers}
+    labels = {d["code"]: f'{d["code"]} · {d["name"]}' for d in drivers}
     default = 0 if side == "Reference" else (1 if len(codes) > 1 else 0)
     code = st.selectbox(f"{side} driver", codes, index=default,
                         format_func=lambda c: labels.get(c, c), key=f"{key}_drv")
@@ -262,12 +267,15 @@ def render_comparison(
     )
 
     # Official sectors: table + dominance map (boundaries at the real timing gates).
-    st.markdown("#### Sectors — official timing gates" if official
-                else "#### Sectors — equal thirds (source has no timing gates)")
+    st.markdown("#### Official sectors" if official
+                else "#### Sectors (equal thirds, no timing gates in source)")
     s_left, s_right = st.columns([1, 1])
     with s_left:
-        st.dataframe(_sel_faster_to_code(main_df, ref_code, cmp_code),
-                     use_container_width=True, hide_index=True)
+        main_show = _sel_faster_to_code(main_df, ref_code, cmp_code).rename(columns={
+            "sector": "Sector", "ref_s": f"{ref_code} (s)", "cmp_s": f"{cmp_code} (s)",
+            "delta_s": "Δ (s)", "faster": "Faster",
+        })
+        st.dataframe(main_show, use_container_width=True, hide_index=True)
     with s_right:
         sec_edges = sectors.main_sector_edges(reference, delta_df)
         sector_dom_df = main_df.assign(dist_start=sec_edges[:-1], dist_end=sec_edges[1:])
@@ -278,7 +286,7 @@ def render_comparison(
         )
 
     # Mini-sectors: table + dominance map (sliced so each mini-sector is visible).
-    st.markdown(f"#### Mini-sectors — {len(mini_df)} × ~5s (fixed per track)")
+    st.markdown(f"#### Mini-sectors ({len(mini_df)} × ~5 s, fixed per track)")
     du = units.distance_unit(imperial)
     mini_show = _sel_faster_to_code(mini_df, ref_code, cmp_code)
     mini_show["dist_start"] = units.distance(mini_show["dist_start"].to_numpy(), imperial).round(0)
@@ -376,7 +384,7 @@ def fastf1_page():
         st.info("Pick a reference and comparison lap in the sidebar.")
         return
     if (ref_code, ref_lap) == (cmp_code, cmp_lap):
-        st.warning("Reference and comparison are the same lap — pick two different laps.")
+        st.warning("Reference and comparison are the same lap. Pick two different laps.")
         return
 
     sel = {
@@ -487,7 +495,7 @@ def iracing_page():
         imperial = st.toggle("Imperial units (mph / ft)", value=False)
 
     if ref_idx == cmp_idx:
-        st.warning("Reference and comparison are the same lap — pick two different laps.")
+        st.warning("Reference and comparison are the same lap. Pick two different laps.")
         return
 
     reference, comparison = laps[ref_idx], laps[cmp_idx]

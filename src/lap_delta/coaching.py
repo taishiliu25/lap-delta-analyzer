@@ -38,7 +38,7 @@ def _hint(corner: Corner, ref: dict, cmp: dict, imperial: bool,
     dv = cmp["min_speed"] - ref["min_speed"]
     if np.isfinite(dv) and dv < -_SPEED_KPH:
         hints.append(f"{cmp_code} carries {_speed_txt(dv, imperial):.0f} {su} less apex speed "
-                     f"than {ref_code} — carry more entry speed")
+                     f"than {ref_code}; carry more entry speed")
     elif np.isfinite(dv) and dv > _SPEED_KPH:
         hints.append(f"{cmp_code} carries {_speed_txt(dv, imperial):.0f} {su} more apex speed "
                      f"than {ref_code}")
@@ -46,17 +46,17 @@ def _hint(corner: Corner, ref: dict, cmp: dict, imperial: bool,
     dbp = cmp["brake_point"] - ref["brake_point"]
     if np.isfinite(dbp) and dbp < -_DIST_M:
         hints.append(f"{cmp_code} brakes {_dist_txt(dbp, imperial):.0f} {du} earlier than "
-                     f"{ref_code} — try braking later")
+                     f"{ref_code}; try braking later")
     elif np.isfinite(dbp) and dbp > _DIST_M:
         hints.append(f"{cmp_code} brakes {_dist_txt(dbp, imperial):.0f} {du} later than {ref_code}")
 
     dto = cmp["throttle_on"] - ref["throttle_on"]
     if np.isfinite(dto) and dto > _DIST_M:
         hints.append(f"{cmp_code} gets to throttle {_dist_txt(dto, imperial):.0f} {du} later "
-                     f"than {ref_code} — get on power sooner")
+                     f"than {ref_code}; get on power sooner")
     elif np.isfinite(dto) and dto < -_DIST_M:
         hints.append(f"{cmp_code} gets to throttle {_dist_txt(dto, imperial):.0f} {du} earlier "
-                     f"than {ref_code} — good")
+                     f"than {ref_code} (good)")
 
     if not hints:
         return f"{cmp_code} matched {ref_code} closely"
