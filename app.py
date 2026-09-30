@@ -332,6 +332,24 @@ def render_comparison(
 
 # --- FastF1 page -------------------------------------------------------------------
 
+def _fastf1_unavailable(what: str, exc: Exception) -> None:
+    """Friendly message + Retry when a live FastF1 fetch fails (common on cold cloud starts).
+
+    FastF1 downloads live F1 data on first use; on shared hosting with no warm cache that can
+    be slow or rate-limited. We never surface the raw traceback — we explain it and offer a
+    retry (a rerun re-attempts, since cached calls don't cache exceptions)."""
+    st.warning(
+        f"Couldn't load {what} from FastF1 just now. It fetches live F1 data on first use, "
+        "which can be slow or rate-limited on shared hosting. Click **Retry** in a moment — the "
+        "next attempt usually works — or open the **iRacing (.ibt)** page, which runs fully "
+        "offline from an uploaded file."
+    )
+    st.button("Retry", type="primary", key=f"retry_{what}".replace(" ", "_"))
+    with st.expander("Technical details"):
+        st.code(str(exc))
+    st.stop()
+
+
 def fastf1_page():
     inject_theme()
     _top_bar("FASTF1 · FORMULA 1")
@@ -344,7 +362,7 @@ def fastf1_page():
         try:
             events, sessions_by_round = load_schedule(year)
         except Exception as exc:  # noqa: BLE001
-            st.error(f"Could not load {year} schedule: {exc}")
+            _fastf1_unavailable(f"the {year} schedule", exc)
             return
         if not events:
             st.warning("No events found for this year.")
@@ -366,7 +384,7 @@ def fastf1_page():
         try:
             drivers, laps_df = load_summary(year, event["name"], session_id)
         except Exception as exc:  # noqa: BLE001
-            st.error(f"Could not load entry list: {exc}")
+            _fastf1_unavailable(f"the entry list for {event['name']} {year}", exc)
             return
         if not drivers:
             st.warning("No drivers found for this session.")
@@ -408,7 +426,7 @@ def _render_fastf1(sel: dict, imperial: bool):
     try:
         laps = load_two_laps(sel["year"], sel["event"], sel["session"], selections)
     except Exception as exc:  # noqa: BLE001
-        st.error(f"Could not load telemetry: {exc}")
+        _fastf1_unavailable("the telemetry for the selected laps", exc)
         return
 
     by_key = {(lp.meta.driver, lp.meta.lap_number): lp for lp in laps}

@@ -140,13 +140,31 @@ class FastF1Adapter(TelemetryAdapter):
 
     # -- internals -----------------------------------------------------------------
 
-    def _open_session(self, year, event, session, *, telemetry: bool):
-        """Open and load a FastF1 session (``telemetry=False`` for cheap metadata loads)."""
+    def _open_session(self, year, event, session, *, telemetry: bool, retries: int = 3):
+        """Open and load a FastF1 session (``telemetry=False`` for cheap metadata loads).
+
+        FastF1 downloads live data on first use; on shared hosting (e.g. Streamlit Cloud with
+        no warm cache) that request can be slow or rate-limited, leaving the session
+        half-loaded so ``.results`` / ``.laps`` raise "not loaded yet". We retry a few times
+        with backoff, re-fetching the session each attempt, and raise the last error if all
+        fail so the UI can show a friendly message.
+        """
+        import time
+
         import fastf1  # lazy — also ensures the cache is configured
 
-        ses = fastf1.get_session(year, event, session)
-        ses.load(laps=True, telemetry=telemetry, weather=False, messages=False)
-        return ses
+        last_exc: Exception | None = None
+        for attempt in range(retries):
+            try:
+                ses = fastf1.get_session(year, event, session)
+                ses.load(laps=True, telemetry=telemetry, weather=False, messages=False)
+                return ses
+            except Exception as exc:  # noqa: BLE001 - FastF1/network is flaky on shared hosting
+                last_exc = exc
+                log.warning("FastF1 load attempt %d/%d failed: %s", attempt + 1, retries, exc)
+                if attempt < retries - 1:
+                    time.sleep(1.5 * (attempt + 1))
+        raise last_exc  # type: ignore[misc]
 
     @staticmethod
     def _team_colors(ses) -> dict[str, str]:
