@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lap-delta-analyzer"
+version = "0.1.0"
+description = "Distance-domain lap time delta analyzer for motorsport telemetry (FastF1 now, iRacing .ibt ready)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Tai Liu" }]
+keywords = ["motorsport", "telemetry", "formula1", "iracing", "fastf1", "data-analysis"]
+
+dependencies = [
+    "fastf1>=3.4",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "plotly>=5.18",
+    "streamlit>=1.30",
+    "pyirsdk>=1.3",      # iRacing .ibt ingestion (M7); imported lazily inside the adapter
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+# Kept as an alias so `pip install -e ".[iracing]"` still works; pyirsdk is now a core dep.
+iracing = ["pyirsdk>=1.3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "network: tests that hit the FastF1 API / require internet (deselect with '-m \"not network\"').",
+    "slow: slow tests (real telemetry download + processing); deselect with '-m \"not slow\"'.",
+    "iracing: tests that parse real .ibt fixtures (need pyirsdk + data/sample/*.ibt); self-skip otherwise.",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

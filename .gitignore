@@ -1,0 +1,52 @@
+# FastF1 cache (regenerated on demand)
+cache/
+*.ff1pkl
+
+# Telemetry data (large / user-specific — the app is upload-only)
+*.ibt
+data/sample/*.ibt
+
+# Internal design/planning docs — not part of the published project
+plan.md
+plan_m7.md
+CLAUDE.md
+
+# Harness / editor / logs / installed skills (not part of the project)
+.agents/
+.claude/
+skills-lock.json
+*.log
+
+# Node tooling (Playwright etc. — dev-only, not part of the Python project)
+node_modules/
+package.json
+package-lock.json
+
+# Design-audit output
+audit/
+_audit_page.py
+_smoke_*.py
+
+# Precomputed mini-sector boundaries (regenerated on demand)
+data/*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,2 @@
+# Telemetry snapshots live here. A sample iRacing .ibt will be added in Milestone 7.
+# FastF1 data is fetched on demand and cached under ../../cache/ (gitignored).

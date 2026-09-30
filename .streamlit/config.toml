@@ -1,0 +1,15 @@
+# Dark "pit-wall" theme — what a race engineer reads mid-session.
+# Shared by both pages (FastF1 + iRacing) so the app has one consistent look.
+[theme]
+base = "dark"
+primaryColor = "#E10600"            # F1 red — accents, focus, primary button
+backgroundColor = "#0E1117"         # app canvas
+secondaryBackgroundColor = "#161A21" # panels, sidebar, KPI cards, tables
+textColor = "#D7DCE3"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

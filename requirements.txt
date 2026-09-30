@@ -1,0 +1,9 @@
+# Runtime dependencies for the Lap Delta Analyzer (FastF1-first).
+# Pinned to minimum-compatible versions; `pip install -e .` uses pyproject.toml instead.
+fastf1>=3.4
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+plotly>=5.18
+streamlit>=1.30
+pyirsdk>=1.3   # iRacing .ibt parsing (imported lazily in the adapter; needed by the hosted app)
